@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        #wrapper {
+            text-align: center;
+        }
+
+        button {
+            user-select: none;
+            border: 1px solid #00b0e8;
+            background-color: #0082B2;
+            border-radius: 3px;
+            padding: 5px 8px;
+            outline: none;
+        }
+
+        canvas {
+            box-shadow: -2px -2px #efefef, 5px 5px 5px #b9b9b9;
+        }
+    </style>
+</head>
+<body>
+<script src="gomoku1.js"></script>
+<div id="wrapper">
+    <p>五子棋</p>
+    <div id="stage"></div>
+    <p>
+        <button id="undoWhite">白色悔棋</button>
+        <button id="undoBlack">黑色悔棋</button>
+        <button id="un-undo">撤销悔棋</button>
+        <br>
+        <br>
+        <button id="new-game">重开</button>
+    </p>
+</div>
+<script>
+  const div = document.querySelector('#stage')
+  const undoWhite = document.querySelector('#undoWhite')
+  const undoBlack = document.querySelector('#undoBlack')
+  const unUndo = document.querySelector('#un-undo')
+  const newGame = document.querySelector('#new-game')
+  let game = new Gomoku(div)
+
+  undoWhite.onclick = function () {
+    if (game.undoStep === 10) {
+      this.style.disable = true
+      return
+    }
+    game.undo(1)
+  }
+  undoBlack.onclick = function () {
+    if (game.undoStep === 10) {
+      this.style.disable = true
+      return
+    }
+    game.undo(2)
+  }
+  unUndo.onclick = function () {
+    if (game.undoStep === 0) {
+      this.style.disable = true
+      return
+    }
+    game.undo(-1)
+  }
+  newGame.onclick = function () {
+    game = new Gomoku(div)
+  }
+
+  if (document.readyState === 'complete') {
+    unUndo.style.disable = game.undoStep
+  }
+
+</script>
+</body>
+</html>

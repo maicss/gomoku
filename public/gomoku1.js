@@ -37,30 +37,14 @@ class Gomoku {
     if (!document) throw new Error('Program must run in a html file.')
     if (gridSize < 10) throw new RangeError('grid size is too small')
     if (stageContainer.nodeType !== 1) throw new TypeError('stage container must be an DOM element.')
+    if (stageContainer.querySelector('#_gomoku')) stageContainer.removeChild(stageContainer.querySelector('#_gomoku'))
     this._canvas = document.createElement('canvas')
+    this._canvas.id = '_gomoku'
     this.stageContext = this._canvas.getContext('2d')
     stageContainer.append(this._canvas)
     this.gridSize = gridSize || 15
     this.stage = this.buildStage(this.gridSize)
-    // this.stage = {
-    //   "0,0":0,"0,1":0,"0,2":0,"0,3":0,"0,4":0,"0,5":0,"0,6":0,"0,7":0,"0,8":0,"0,9":0,"0,10":0,"0,11":0,"0,12":0,"0,13":0,"0,14":0,
-    //   "1,0":0,"1,1":0,"1,2":0,"1,3":0,"1,4":0,"1,5":0,"1,6":0,"1,7":0,"1,8":0,"1,9":0,"1,10":0,"1,11":0,"1,12":0,"1,13":0,"1,14":0,
-    //   "2,0":0,"2,1":0,"2,2":0,"2,3":0,"2,4":0,"2,5":0,"2,6":0,"2,7":0,"2,8":0,"2,9":0,"2,10":0,"2,11":0,"2,12":0,"2,13":0,"2,14":0,
-    //   "3,0":0,"3,1":0,"3,2":0,"3,3":0,"3,4":0,"3,5":0,"3,6":0,"3,7":0,"3,8":0,"3,9":0,"3,10":0,"3,11":0,"3,12":0,"3,13":0,"3,14":0,
-    //   "4,0":0,"4,1":0,"4,2":0,"4,3":0,"4,4":0,"4,5":0,"4,6":0,"4,7":0,"4,8":0,"4,9":0,"4,10":0,"4,11":0,"4,12":0,"4,13":0,"4,14":0,
-    //   "5,0":0,"5,1":0,"5,2":0,"5,3":0,"5,4":0,"5,5":0,"5,6":0,"5,7":0,"5,8":0,"5,9":0,"5,10":2,"5,11":1,"5,12":0,"5,13":0,"5,14":0,
-    //   "6,0":0,"6,1":0,"6,2":0,"6,3":0,"6,4":0,"6,5":0,"6,6":0,"6,7":0,"6,8":0,"6,9":0,"6,10":2,"6,11":1,"6,12":0,"6,13":0,"6,14":0,
-    //   "7,0":0,"7,1":0,"7,2":0,"7,3":0,"7,4":0,"7,5":0,"7,6":0,"7,7":0,"7,8":0,"7,9":0,"7,10":2,"7,11":1,"7,12":0,"7,13":0,"7,14":0,
-    //   "8,0":0,"8,1":0,"8,2":0,"8,3":0,"8,4":0,"8,5":0,"8,6":0,"8,7":0,"8,8":0,"8,9":0,"8,10":2,"8,11":1,"8,12":0,"8,13":0,"8,14":0,
-    //   "9,0":0,"9,1":0,"9,2":0,"9,3":0,"9,4":0,"9,5":0,"9,6":0,"9,7":0,"9,8":0,"9,9":0,"9,10":0,"9,11":1,"9,12":0,"9,13":0,"9,14":0,
-    //   "10,0":0,"10,1":0,"10,2":0,"10,3":0,"10,4":0,"10,5":0,"10,6":0,"10,7":0,"10,8":0,"10,9":0,"10,10":0,"10,11":0,"10,12":0,"10,13":0,"10,14":0,
-    //   "11,0":0,"11,1":0,"11,2":0,"11,3":0,"11,4":0,"11,5":0,"11,6":0,"11,7":0,"11,8":0,"11,9":0,"11,10":0,"11,11":0,"11,12":0,"11,13":0,"11,14":0,
-    //   "12,0":0,"12,1":0,"12,2":0,"12,3":0,"12,4":0,"12,5":0,"12,6":0,"12,7":0,"12,8":0,"12,9":0,"12,10":0,"12,11":0,"12,12":0,"12,13":0,"12,14":0,
-    //   "13,0":0,"13,1":0,"13,2":0,"13,3":0,"13,4":0,"13,5":0,"13,6":0,"13,7":0,"13,8":0,"13,9":0,"13,10":0,"13,11":0,"13,12":0,"13,13":0,"13,14":0,
-    //   "14,0":0,"14,1":0,"14,2":0,"14,3":0,"14,4":0,"14,5":0,"14,6":0,"14,7":0,"14,8":0,"14,9":0,"14,10":0,"14,11":0,"14,12":0,"14,13":0,"14,14":0
-    // }
-    // 棋盘样式控制
-    this.padding = 8
+    this.padding = 12
     this.cellWidth = 24
     this.nodeRadius = this.cellWidth / 2 - 2 //  棋子的半径
     this.nodeColors = [['#d1d1d1', '#f9f9f9'], ['#0a0a0a', '#636766']]
@@ -86,20 +70,33 @@ class Gomoku {
 
   undo (role) {
     // 撤销操作
-
-    const reversedQ = this.queue.reverse()
-    const index = reversedQ.findIndex(i => i.role === role)
-    this.undoedSteps = this.undoedSteps.concat(this.queue.slice(index, -1))
+    // console.log(JSON.stringify(this.queue))
+    const rIndex = this.queue.reverse().findIndex(i => i.role === role)
+    const index = this.queue.length - 1 - rIndex
+    this.queue.reverse()
+    // 这个的长度最大为2，最小为0，一般为1
+    const _undos = this.queue.slice(index, this.queue.length)
+    this.undoedSteps = this.undoedSteps.concat(_undos)
     this.queue = this.queue.splice(0, index)
+    // console.log(JSON.stringify(this.undoedSteps))
+    // console.log(JSON.stringify(this.queue))
+    _undos.forEach(step => this.clearANode(Number(step.position.split(',')[0]), Number(step.position.split(',')[1])))
+  }
 
-    console.log(this.queue)
-    console.log(this.undoedSteps)
-    // this.undoStep += step
-    // if (this.undoStep > 5) this.undoStep = 5
-    // if (this.undoStep < 5) this.undoStep = 0
-    // if (this.queue.length) {
-    //   this.stage = this.queue[this.undoStep]
-    // }
+  redo (role) {
+    /**
+     * 撤销撤销
+     * */
+      // console.log("=".repeat(50))
+    const rIndex = this.undoedSteps.reverse().findIndex(i => i.role === role)
+    const index = this.undoedSteps.length - 1 - rIndex
+    this.undoedSteps.reverse()
+    const _redos = this.undoedSteps.slice(index, this.undoedSteps.length)
+    this.queue = this.queue.concat(_redos)
+    this.undoedSteps = this.undoedSteps.splice(0, index)
+    // console.log(JSON.stringify(this.undoedSteps))
+    // console.log(JSON.stringify(this.queue))
+    _redos.forEach(step => this.dropANode(Number(step.position.split(',')[0]), Number(step.position.split(',')[1]), step.role))
   }
 
   buildStage (gridSize) {
@@ -194,6 +191,7 @@ class Gomoku {
   }
 
   dropANode (x, y, nodeType) {
+    // console.log(x, y)
     /**
      * 画一个棋子
      * @param {number} nodeType 只能为1或者2
@@ -219,14 +217,36 @@ class Gomoku {
      * 删除一个棋子
      * */
     //擦除该圆
-    this.stageContext.clearRect((x) * this.cellWidth, (y) * this.cellWidth, this.cellWidth, this.cellWidth)
+    this.stageContext.clearRect(x * this.cellWidth - 2, y * this.cellWidth - 2, this.cellWidth, this.cellWidth)
     // 重画该圆周围的格子
+    // todo 重新绘制后颜色变浅
     this.stageContext.beginPath()
-    this.stageContext.moveTo(this.padding + x * this.cellWidth, y * this.cellWidth)
-    this.stageContext.lineTo(this.padding + x * this.cellWidth, y * this.cellWidth + this.cellWidth)
-    this.stageContext.moveTo(x * this.cellWidth, y * this.cellWidth + this.padding)
-    this.stageContext.lineTo((x + 1) * this.cellWidth, y * this.cellWidth + this.padding)
+    if (y === 0) {
+      this.stageContext.moveTo(this.padding + x * this.cellWidth, this.padding)
+    } else {
+      this.stageContext.moveTo(this.padding + x * this.cellWidth, y * this.cellWidth - 2)
+    }
+    if (y === 14) {
+      this.stageContext.lineTo(this.padding + x * this.cellWidth, y * this.cellWidth + this.padding)
+    } else {
+      this.stageContext.lineTo(this.padding + x * this.cellWidth, (y + 1) * this.cellWidth)
+    }
 
     this.stageContext.stroke()
+
+    if ( x === 0) {
+      this.stageContext.moveTo(x * this.cellWidth - 2 + this.padding, y * this.cellWidth + this.padding)
+    } else {
+      this.stageContext.moveTo(x * this.cellWidth - 2, y * this.cellWidth + this.padding)
+    }
+    if (x === 14) {
+      this.stageContext.lineTo(x * this.cellWidth + this.padding, y * this.cellWidth + this.padding)
+    } else {
+      this.stageContext.lineTo((x + 1) * this.cellWidth, y * this.cellWidth + this.padding)
+    }
+    this.stageContext.stroke()
+    // 重置该点数据和当前角色
+    this.stage[[x, y].toString()] = 0
+    this.currentMoveRole = this.currentMoveRole === 1 ? 2 : 1
   }
 }

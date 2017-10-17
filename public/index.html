@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Socket.IO Chat Example</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="cover">
+  <div class="login page">
+    <h3 class="title">Login</h3>
+    <label for="username">
+      <strong>Username</strong>
+      <input autocomplete="off" type="text" maxlength="8" id="username">
+    </label>
+    <label for="pwd">
+      <strong>Password</strong>
+      <input id="pwd" type="password" maxlength="14"/>
+    </label>
+    <p id="login-error"></p>
+  </div>
+</div>
+
+
+<div id="wrapper">
+  <p>五子棋</p>
+  <p id="logout"><button>退出登录</button></p>
+</div>
+
+<!--<script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>-->
+<script src="/socket.io/socket.io.js"></script>
+<!--<script src="main.js"></script>-->
+<script src="gomoku1.js"></script>
+</body>
+</html>
+
+<script>
+  const $ = document.querySelector.bind(document)
+  const loadingPage = $('#cover')
+  const loginError = $('#login-error')
+  const usernameInput = $('#username')
+  const pwdInput = $('#pwd')
+  const logout = $('#logout')
+  const stage = $('#wrapper')
+
+  const userInfo = localStorage.gomoku ? JSON.parse(localStorage.gomoku) : {}
+  const socket = io()
+  let game
+
+  if (userInfo.username) {
+    loadingPage.style.display = 'none'
+    stage.style.display = 'block'
+    game = new Gomoku(stage)
+  } else {
+    document.addEventListener('keyup', function (e) {
+      if (e.key === 'Enter') {
+        const username = usernameInput.value.trim()
+        const pwd = pwdInput.value.trim()
+        if (username && pwd) {
+          socket.emit('login', {username, pwd})
+        }
+      }
+    })
+
+    socket.on('login succeed', function (user) {
+      userInfo.username = user.username
+      userInfo.pwd = user.pwd
+      localStorage.gomoku = JSON.stringify(user)
+      loadingPage.style.display = 'none'
+      stage.style.display = 'block'
+      game = new Gomoku(stage)
+    })
+
+    socket.on('login failed', function (data) {
+      // todo 定时消失
+      loginError.innerText = data
+    })
+
+    socket.on('user joined', function (onlineUser) {
+      console.log(onlineUser)
+    })
+  }
+
+  logout.onclick = function () {
+    socket.emit('logout', userInfo)
+  }
+
+  socket.on('logout succeed', function () {
+    localStorage.gomoku = ''
+    loadingPage.style.display = 'block'
+    stage.style.display = 'none'
+//    usernameInput.value = ''
+//    pwdInput.value = ''
+  })
+
+
+</script>

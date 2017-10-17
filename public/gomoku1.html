@@ -51,27 +51,16 @@
   let game = new Gomoku(div)
 
   undoWhite.onclick = function () {
-    if (game.undoStep === 10) {
-      this.style.disable = true
-      return
-    }
     game.undo(1)
   }
   undoBlack.onclick = function () {
-    if (game.undoStep === 10) {
-      this.style.disable = true
-      return
-    }
     game.undo(2)
   }
   unUndo.onclick = function () {
-    if (game.undoStep === 0) {
-      this.style.disable = true
-      return
-    }
-    game.undo(-1)
+    game.redo(1)
   }
   newGame.onclick = function () {
+
     game = new Gomoku(div)
   }
 

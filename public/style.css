@@ -19,6 +19,11 @@ body {
   position: relative;
 }
 
+button {
+  cursor: pointer;
+  user-select: none;
+}
+
 #wrapper {
   text-align: center;
   display: none;
@@ -67,6 +72,52 @@ body {
   width: 300px;
   font-size: 24px;
   line-height: 1;
+  text-align: center;
+}
+
+#main {
+  width: 1000px;
+  margin: 0 auto;
+}
+
+#stage {
+  width: 500px;
+  float: left;
+}
+
+#mask {
+  position: fixed;
+  z-index: 100;
+  height: 100%;
+  width:100%;
+  background-color: rgba(45, 45, 45, 0.58);
+  top: 0;
+  left: 0;
+  display: none;
+}
+
+#modal {
+  position: fixed;
+  display: none;
+  z-index: 101;
+  overflow: hidden;
+  width: 300px;
+  left: 40%;
+  top: 40%;
+  background-color: #fff;
+  text-align: left;
+  padding: 10px;
+}
+
+#modal label{
+  display: inline-block;
+}
+
+#modal label strong {
+  width: 80px;
+}
+
+#modal p{
   text-align: center;
 }
 
@@ -155,4 +206,18 @@ body {
   position: absolute;
   right: 0;
   width: 100%;
+}
+
+#game-static {
+  float: left;
+  width: 250px;
+  list-style: none;
+  text-align: justify;
+  background-color: #e0ff42;
+}
+
+#chat {
+  width: 250px;
+  float: right;
+  background-color: #ffb680;
 }

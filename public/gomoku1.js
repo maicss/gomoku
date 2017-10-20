@@ -36,12 +36,8 @@ class Gomoku {
   constructor (stageContainer, gridSize) {
     if (!document) throw new Error('Program must run in a html file.')
     if (gridSize < 10) throw new RangeError('grid size is too small')
-    if (stageContainer.nodeType !== 1) throw new TypeError('stage container must be an DOM element.')
-    if (stageContainer.querySelector('#_gomoku')) stageContainer.removeChild(stageContainer.querySelector('#_gomoku'))
-    this._canvas = document.createElement('canvas')
-    this._canvas.id = '_gomoku'
+    this._canvas = stageContainer
     this.stageContext = this._canvas.getContext('2d')
-    stageContainer.append(this._canvas)
     this.gridSize = gridSize || 15
     this.stage = this.buildStage(this.gridSize)
     this.padding = 12
@@ -54,13 +50,11 @@ class Gomoku {
     this.queue = []
     // 撤销删除的数据，以备之后回撤使用
     this.undoedSteps = []
-    // 撤销步数，主要是为了撤销撤销用的
-    this.undoStep = 0
     // 先默认白棋先手
     this.currentMoveRole = 2
     // 游戏模式：p2p， p2c
     this.gameMode = 'p2p'
-    this._canvas.onclick = this.handleClick.bind(this)
+    // this._canvas.onclick = this.handleClick.bind(this)
     this.generateStage()
   }
 

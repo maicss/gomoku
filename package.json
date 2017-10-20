@@ -1,0 +1,15 @@
+{
+  "name": "gomoku",
+  "version": "1.0.0",
+  "description": "A Vue.js project",
+  "author": "maicss <maicss@foxmail.com>",
+  "private": true,
+  "scripts": {
+  },
+  "dependencies": {
+    "koa": "^2.3.0",
+    "koa-router": "^7.2.1",
+    "koa-static": "^4.0.1",
+    "socket.io": "^2.0.3"
+  }
+}

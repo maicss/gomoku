@@ -24,7 +24,59 @@
 
 <div id="wrapper">
   <p>五子棋</p>
-  <p id="logout"><button>退出登录</button></p>
+  <p>
+    <button id="newGame">开始游戏</button>
+    <button id="logout">退出登录</button>
+  </p>
+  <div id="main">
+    <ul id="game-static">
+      <li>已完成的游戏：</li>
+      <li>总时长：</li>
+      <li>平均时长：</li>
+      <li>玩游戏最多的人：</li>
+      <li>战绩统计：</li>
+    </ul>
+    <div id="stage">
+      <p id="moveReminder">
+        <span id="mine" style="display: none">请落子……</span>
+        <span id="their" style="display: none">等待对方落子中……</span>
+      </p>
+      <canvas id="gomoku"></canvas>
+      <p>
+        <button>悔棋</button>
+        <button>撤销悔棋</button>
+        <button>重开</button>
+      </p>
+    </div>
+    <div id="chat">
+      <p>当前在线：</p>
+      <ul id="online-users"></ul>
+      <ul id="chat-room"></ul>
+      <input id="chat-input" type="text">
+    </div>
+  </div>
+
+  <div id="mask"></div>
+
+  <div id="modal">
+    <label>
+      <strong>游戏模式：</strong>
+      <input type="radio" name="game-model" checked value="p2p"> 玩家对战
+      <input type="radio" name="game-model" value="p2c"> 人机对战
+    </label>
+    <label><strong>棋子颜色：</strong>
+      <input type="radio" name="node-color" checked value=1> 白
+      <input type="radio" name="node-color" value=2> 黑
+    </label>
+    <label><strong>是否先手：</strong>
+      <input type="radio" name="first-step" checked value="true"> 是
+      <input type="radio" name="first-step" value="false"> 否
+    </label>
+    <p>
+      <button id="modal-cancel">取消</button>
+      <button id="modal-confirm">确认</button>
+    </p>
+  </div>
 </div>
 
 <!--<script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>-->
@@ -41,7 +93,21 @@
   const usernameInput = $('#username')
   const pwdInput = $('#pwd')
   const logout = $('#logout')
-  const stage = $('#wrapper')
+  const wrapper = $('#wrapper')
+  const stage = $('#stage')
+  const canvas = $('#gomoku')
+  const newGame = $('#newGame')
+  const mask = $('#mask')
+  const modal = $('#modal')
+  const modalCancel = $('#modal-cancel')
+  const modalConfirm = $('#modal-confirm')
+  const onlineUsersContainer = $('#online-users')
+  const mineMove = $('#mine')
+  const otherMove = $('#their')
+  let gameModel, nodeColor
+  let isMyMove = false
+  // 对战信息，from是自己，to是对方，同时缓存对方的socketId，用于对方进行刷新页面操作的断开游戏行为的验证
+  const matchInfo = {}
 
   const userInfo = localStorage.gomoku ? JSON.parse(localStorage.gomoku) : {}
   const socket = io()
@@ -49,8 +115,7 @@
 
   if (userInfo.username) {
     loadingPage.style.display = 'none'
-    stage.style.display = 'block'
-    game = new Gomoku(stage)
+    wrapper.style.display = 'block'
   } else {
     document.addEventListener('keyup', function (e) {
       if (e.key === 'Enter') {
@@ -67,8 +132,7 @@
       userInfo.pwd = user.pwd
       localStorage.gomoku = JSON.stringify(user)
       loadingPage.style.display = 'none'
-      stage.style.display = 'block'
-      game = new Gomoku(stage)
+      wrapper.style.display = 'block'
     })
 
     socket.on('login failed', function (data) {
@@ -81,6 +145,75 @@
     })
   }
 
+  // todo 对战开始后，一方刷新页面，该怎么处理
+
+  document.onreadystatechange = function () {
+    if (document.readyState === 'complete') {
+
+      // 处理canvas的点击事件
+      canvas.onclick = function (e) {
+        if (!game) return
+        if (!isMyMove) return
+        // 获取点击的坐标
+        let {offsetX: x, offsetY: y} = e
+        // 获取点击坐标附近的交叉点
+        let nodeX = Math.floor(x / game.cellWidth)
+        let nodeY = Math.floor(y / game.cellWidth)
+        if (game.stage[[nodeX, nodeY].toString()] === 0) {
+          // 当前是空位
+          game.dropANode(nodeX, nodeY, game.currentMoveRole)
+          socket.emit('drop node', {info: matchInfo, pos: {x, y}})
+          // 往撤销队列里push一个当前对象
+          game.queue.push({role: game.currentMoveRole, position: [nodeX, nodeY].toString()})
+          // 更新当前model
+          game.updateStage(nodeX, nodeY, game.currentMoveRole)
+          // 检测是不是游戏结束
+          game.checkWin(game.currentMoveRole)
+          isMyMove = false
+          mineMove.style.display = 'none'
+          otherMove.style.display = 'inline'
+          if (game.isWin) {
+            socket.emit('role win', game.currentMoveRole)
+            console.log(1)
+          } else {
+            // 切换角色
+//            if (game.gameMode === 'p2p') {
+//              game.currentMoveRole = game.currentMoveRole === 1 ? 2 : 1
+//            } else {
+//              game.AI()
+//            }
+          }
+        }
+      }
+
+      // 请求对战 并设置条件
+      onlineUsersContainer.onclick = function (e) {
+        if (e.target.localName === 'button') {
+          let first = true
+          mask.style.display = 'block'
+          modal.style.display = 'block'
+
+          modalCancel.onclick = function () {
+            mask.style.display = 'none'
+            modal.style.display = 'none'
+          }
+
+          modalConfirm.onclick = function () {
+            gameModel = $('input[name="game-model"]:checked').value
+            nodeColor = $('input[name="node-color"]:checked').value * 1
+            isMyMove = first = $('input[name="first-step"]:checked').value === 'true'
+            mask.style.display = 'none'
+            modal.style.display = 'none'
+
+            const username = e.target.parentNode.firstChild.innerText.trim()
+            const socketId = e.target.parentNode.firstChild.dataset.id
+            socket.emit('require match', {from: userInfo.username, to: username, nodeColor, first})
+          }
+        }
+      }
+    }
+  }
+
   logout.onclick = function () {
     socket.emit('logout', userInfo)
   }
@@ -88,10 +221,63 @@
   socket.on('logout succeed', function () {
     localStorage.gomoku = ''
     loadingPage.style.display = 'block'
-    stage.style.display = 'none'
+    wrapper.style.display = 'none'
 //    usernameInput.value = ''
 //    pwdInput.value = ''
   })
+  socket.on('user joined', function (data) {
+    const users = Object.keys(data)
+    onlineUsersContainer.innerHTML = users.map(username => {
+      if (username !== userInfo.username) return `<li><strong data-id="${data[username].socketId}">${username} </strong><button class="vs">和TA对战</button></li>`
+    }).join('')
+  })
+  socket.on('user left', function (data) {
+    console.log(data)
+  })
 
+  socket.on('connect', () => {
+    socket.emit('client info', {username: userInfo.username}, function (d) {
+      onlineUsersContainer.innerHTML = Object.keys(d).map(username => {
+        if (username !== userInfo.username) return `<li><strong data-id="${d[username].socketId}">${username} </strong><button class="vs">和TA对战</button></li>`
+      }).join('')
+    })
+  })
+
+  socket.on('require match res', (config, res) => {
+    // 主动请求对战，对方返回的结果
+    if (res) {
+      game = new Gomoku(canvas)
+      game.currentMoveRole = nodeColor
+      game.gameMode = gameModel
+      if (config.first) {
+        mineMove.style.display = 'inline'
+      }
+
+      matchInfo.from = userInfo.username
+      matchInfo.to = config.to
+    } else {
+      alert(config.to + ' 拒绝了你的游戏请求')
+    }
+  })
+
+  socket.on('require match', (config) => {
+    // 被动请求对战
+    // mask.style.display = 'block'
+    const res = confirm(`${config.from}想和你对战，条件：${config.nodeColor === 1 ? '白棋' : '黑棋'}、${config.first ? '先手' : '后手'}。`)
+    socket.emit('require match res', config, res)
+    if (res) {
+      game = new Gomoku(canvas)
+      game.currentMoveRole = config.nodeColor === 1 ? 2 : 1
+      game.gameMode = 'p2p'
+      isMyMove = !config.first
+      matchInfo.from = userInfo.username
+      matchInfo.to = config.from
+      if (!config.first) {
+        mineMove.style.display = 'inline'
+      } else {
+        otherMove.style.display = 'inline'
+      }
+    }
+  })
 
 </script>

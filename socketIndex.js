@@ -73,8 +73,6 @@ io.on('connection', function (socket) {
   })
 
   socket.on('require match res', function (config, res) {
-    console.log(res)
-    if (res) socket.join('matchRoom')
     if (io.sockets.connected[onlineUsers[config.from].socketId]) {
       io.sockets.connected[onlineUsers[config.from].socketId].emit('require match res', config, res)
     }
@@ -110,8 +108,17 @@ io.on('connection', function (socket) {
 
   socket.on('drop node', (data) => {
     // todo 这里通讯断开断时候断错误处理
-    if (io.sockets.connected[onlineUsers[data.to].socketId]) {
-      io.sockets.connected[onlineUsers[data.to].socketId].emit('drop node', data)
+    if (io.sockets.connected[onlineUsers[data.info.to].socketId]) {
+      io.sockets.connected[onlineUsers[data.info.to].socketId].emit('drop node', data)
+    }
+  })
+
+  socket.on('role win', (info) => {
+    if (io.sockets.connected[onlineUsers[info.to].socketId]) {
+      io.sockets.connected[onlineUsers[info.to].socketId].emit('role win', info)
+    }
+    if (io.sockets.connected[onlineUsers[info.from].socketId]) {
+      io.sockets.connected[onlineUsers[info.from].socketId].emit('role win', info)
     }
   })
 

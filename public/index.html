@@ -108,6 +108,7 @@
   let isMyMove = false
   // 对战信息，from是自己，to是对方，同时缓存对方的socketId，用于对方进行刷新页面操作的断开游戏行为的验证
   const matchInfo = {}
+  const _matchInfo = {}
 
   const userInfo = localStorage.gomoku ? JSON.parse(localStorage.gomoku) : {}
   const socket = io()
@@ -162,7 +163,7 @@
         if (game.stage[[nodeX, nodeY].toString()] === 0) {
           // 当前是空位
           game.dropANode(nodeX, nodeY, game.currentMoveRole)
-          socket.emit('drop node', {info: matchInfo, pos: {x, y}})
+          socket.emit('drop node', {info: matchInfo, pos: {nodeX, nodeY}})
           // 往撤销队列里push一个当前对象
           game.queue.push({role: game.currentMoveRole, position: [nodeX, nodeY].toString()})
           // 更新当前model
@@ -173,7 +174,7 @@
           mineMove.style.display = 'none'
           otherMove.style.display = 'inline'
           if (game.isWin) {
-            socket.emit('role win', game.currentMoveRole)
+            socket.emit('role win', {role: game.currentMoveRole, node: _matchInfo.roleName, from: matchInfo.from, to: matchInfo.to})
             console.log(1)
           } else {
             // 切换角色
@@ -268,7 +269,10 @@
     if (res) {
       game = new Gomoku(canvas)
       game.currentMoveRole = config.nodeColor === 1 ? 2 : 1
-      game.gameMode = 'p2p'
+      _matchInfo.inGaming = true
+      _matchInfo.roleName = config.nodeColor === 1 ? '黑棋' : '白棋'
+      _matchInfo.role = config.first ? '后手' : '先手'
+        game.gameMode = 'p2p'
       isMyMove = !config.first
       matchInfo.from = userInfo.username
       matchInfo.to = config.from
@@ -279,5 +283,18 @@
       }
     }
   })
+
+  socket.on('drop node', (data) => {
+    console.log(data)
+    game.dropANode(data.pos.nodeX, data.pos.nodeY, game.currentMoveRole === 1 ? 2:1)
+    otherMove.style.display = 'none'
+    mineMove.style.display = 'inline'
+    isMyMove = true
+  })
+
+  socket.on('role win', (info) => {
+    console.log(alert(info.from + 'win!'))
+  })
+
 
 </script>
